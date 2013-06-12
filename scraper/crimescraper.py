@@ -6,6 +6,8 @@ import urllib
 import urllib2
 from bs4 import BeautifulSoup
 
+from crimes import crimes
+
 # GROSS!
 #aseurl = "http://b2.caspio.com/"
 #tartdate = "01/01/2000".replace("/","%2F")
@@ -34,25 +36,69 @@ def getrows(thedate):
     html = html.encode('utf-8').strip()
     soup = BeautifulSoup(html)
 
-    table = soup.findChildren('table')[0]
-    rows = table.findChildren('tr')
+    table = soup.find('table', {'name': 'cbTable'} )
+    rows = list()
+    for row in table.findAll('tr'):
+        rows.append(row)
 
     return rows
 
 def pullcells(row):
     cells = row.findChildren('td')
 
-    crime = cells[0].get_text().encode('ascii','ignore')
-    address = cells[1].get_text().encode('ascii','ignore')
-    city = cells[2].get_text().encode('ascii','ignore')
-    department = cells[3].get_text().encode('ascii','ignore')
-    crimedate = cells[4].get_text().encode('ascii','ignore')
-    time = cells[5].get_text().encode('ascii','ignore')
-    
-    return (crime,address,city,department,crimedate,time)
+    crime = cells[0].get_text().encode('ascii','ignore').strip()
+    rawaddress = cells[1].get_text().encode('ascii','ignore').strip()
+    city = cells[2].get_text().encode('ascii','ignore').strip()
+    department = cells[3].get_text().encode('ascii','ignore').strip()
+    crimedate = cells[4].get_text().encode('ascii','ignore').strip()
+    crimetime = cells[5].get_text().encode('ascii','ignore').strip()
+    valid = True    
 
-def addcrime(crime,address,city,department,crimedate,time):
-    return True
+    if crime == "Crime":
+        valid = False
+
+    return (valid,crime,rawaddress,city,department,crimedate,crimetime)
+
+#
+# code via Ralph Bean (github.com/ralphbean) from:
+#   https://github.com/ralphbean/monroe/blob/master/wsgi/tg2app/tg2app/scrapers/propertyinfo.py
+#
+def geocode(address):
+    # TODO -- a more open way of doing this.
+    # Here we have to sleep 1 second to make sure google doesn't scold us.
+    time.sleep(2)
+    vals = {'address': address, 'sensor': 'false'}
+    qstr = urllib.urlencode(vals)
+    reqstr = "http://maps.google.com/maps/api/geocode/json?%s" % qstr
+    return simplejson.loads(urllib.urlopen(reqstr).read())
+
+def addcrime(crime,rawaddress,city,department,crimedate,crimetime):
+    c = crimes()
+   
+    _crimetime = crimetime.split('-')[0]
+    _crimetime = _crimetime.replace('p.m.','pm')
+    _crimetime = _crimetime.replace('a.m.','am')
+    d = crimedate.split('/')
+    _crimedate = "{0}-{1}-{2}".format(d[2],d[0],d[1])
+
+    if(crimedate.split('/')[2] == "2013"):
+        _json = geocode("{0},{1}, NY".format(address,city))
+        fulladdress = _json['results'][0]['formatted_address']
+        lat = _json['results'][0]['geometry']['location']['lat']
+        lng = _json['results'][0]['geometry']['location']['lng']
+        for comp in _json['results'][0]['address_components']:
+            if comp['types'][0] == "postal_code":
+                zipcode = comp['long_name']
+                break
+    else:
+        fulladdress = ""
+        lat = 0
+        lng = 0
+        zipcode = ""
+
+    print "adding: {0},{1},{2},{3},{4},{5},{6},{7},{8}".format(crime,rawaddress,fulladdress,lat,lng,zipcode,city,_crimedate,_crimetime)
+
+    c.add(crime,rawaddress,fulladdress,lat,lng,zipcode,city,_crimedate,_crimetime)
 
 def main(argv):
     print '[SCRAPER] Application Started.'
@@ -64,15 +110,18 @@ def main(argv):
     cdate = date(2011,1,1)
     while cdate < date.today() + timedelta(days=1):
         rows = getrows(cdate)
+        #print rows[0].get_text()
+        #raise Exception("Stop.")
         print "[INFO   ] Parsing daterange {0} - {1}, with {2} rows ...".format(cdate,cdate+timedelta(days=30),len(rows))
         for row in rows:
-            try:
-                crime,address,city,department,crimedate,time = pullcells(row)
-                addcrime(crime,address,city,department,crimedate,time)
-                count += 1
-            except:
-                print '[WARNING] Bad row found, ignoring.'
-                ignorecount += 1
+            #try:
+                valid,crime,rawaddress,city,department,crimedate,crimetime = pullcells(row)
+                if valid == True:
+                    addcrime(crime,rawaddress,city,department,crimedate,crimetime)
+                    count += 1
+            #except:
+                #print '[WARNING] Bad row found, ignoring.'
+                #ignorecount += 1
         cdate = cdate + timedelta(days=1)
 
     print '[INFO   ] Processed {0} crimes successfully. ({1} ignored rows)'.format(count,ignorecount)

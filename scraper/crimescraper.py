@@ -1,6 +1,9 @@
 import sys
 
 from datetime import date, timedelta
+import time
+
+import simplejson
 
 import urllib
 import urllib2
@@ -66,7 +69,7 @@ def pullcells(row):
 def geocode(address):
     # TODO -- a more open way of doing this.
     # Here we have to sleep 1 second to make sure google doesn't scold us.
-    time.sleep(2)
+    time.sleep(.25)
     vals = {'address': address, 'sensor': 'false'}
     qstr = urllib.urlencode(vals)
     reqstr = "http://maps.google.com/maps/api/geocode/json?%s" % qstr
@@ -75,30 +78,41 @@ def geocode(address):
 def addcrime(crime,rawaddress,city,department,crimedate,crimetime):
     c = crimes()
    
-    _crimetime = crimetime.split('-')[0]
-    _crimetime = _crimetime.replace('p.m.','pm')
-    _crimetime = _crimetime.replace('a.m.','am')
+    _crimetime = crimetime.split('-')[0].split(' ')[0]
+    _ampm = crimetime.split('-')[0].split(' ')[1]
+    if _ampm == "p.m.":
+        _crimetime = "{0}:{1}:00".format(int(_crimetime.split(':')[0])+12,_crimetime.split(':')[1])    
+
     d = crimedate.split('/')
     _crimedate = "{0}-{1}-{2}".format(d[2],d[0],d[1])
 
-    if(crimedate.split('/')[2] == "2013"):
-        _json = geocode("{0},{1}, NY".format(address,city))
-        fulladdress = _json['results'][0]['formatted_address']
-        lat = _json['results'][0]['geometry']['location']['lat']
-        lng = _json['results'][0]['geometry']['location']['lng']
-        for comp in _json['results'][0]['address_components']:
-            if comp['types'][0] == "postal_code":
-                zipcode = comp['long_name']
-                break
+    fulladdress = ""
+    lat = 0
+    lng = 0
+    zipcode = ""
+
+    if True:
+    #if c.checkexists(crime,rawaddress,city,department,_crimedate,_crimetime) == False:
+
+        if(crimedate.split('/')[2] == "2013"):
+            _json = geocode("{0},{1}, NY".format(rawaddress,city))
+            if _json['status'] != 'OK':
+                raise Exception("Google API says 'NO MORE!'")
+            fulladdress = _json['results'][0]['formatted_address']
+            lat = _json['results'][0]['geometry']['location']['lat']
+            lng = _json['results'][0]['geometry']['location']['lng']
+            zipcode = ""
+            for comp in _json['results'][0]['address_components']:
+                if comp['types'][0] == "postal_code":
+                    zipcode = comp['long_name']
+                    break
+
+        print "adding: {0},{1},{2},{3},{4},{5},{6},{7},{8},{9}".format(crime,rawaddress,fulladdress,lat,lng,zipcode,city,department,_crimedate,_crimetime)
+
+        c.add(crime,rawaddress,fulladdress,lat,lng,zipcode,city,department,_crimedate,_crimetime)
     else:
-        fulladdress = ""
-        lat = 0
-        lng = 0
-        zipcode = ""
-
-    print "adding: {0},{1},{2},{3},{4},{5},{6},{7},{8}".format(crime,rawaddress,fulladdress,lat,lng,zipcode,city,_crimedate,_crimetime)
-
-    c.add(crime,rawaddress,fulladdress,lat,lng,zipcode,city,_crimedate,_crimetime)
+        print "crime already saved, ignoring ({0},{1},{2},{3},{4},{5},{6},{7},{8},{9})".format(crime,rawaddress,fulladdress,lat,lng,zipcode,city,department,_crimedate,_crimetime)
+        raise Exception("Debug, Stop.")
 
 def main(argv):
     print '[SCRAPER] Application Started.'
@@ -112,7 +126,7 @@ def main(argv):
         rows = getrows(cdate)
         #print rows[0].get_text()
         #raise Exception("Stop.")
-        print "[INFO   ] Parsing daterange {0} - {1}, with {2} rows ...".format(cdate,cdate+timedelta(days=30),len(rows))
+        print "[INFO   ] Parsing daterange {0} - {1}, with {2} rows ...".format(cdate,cdate+timedelta(days=1),len(rows))
         for row in rows:
             #try:
                 valid,crime,rawaddress,city,department,crimedate,crimetime = pullcells(row)

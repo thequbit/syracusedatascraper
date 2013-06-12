@@ -34,10 +34,10 @@ class crimes:
             valueout = valuein
         return valuein
 
-    def add(self,crime,rawaddress,fulladdress,lat,lng,zipcode,city,crimedate,crimetime):
+    def add(self,crime,rawaddress,fulladdress,lat,lng,zipcode,city,department,crimedate,crimetime):
         with self.__con:
             cur = self.__con.cursor()
-            cur.execute("INSERT INTO crimes(crime,rawaddress,fulladdress,lat,lng,zipcode,city,crimedate,crimetime) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)",(self.__sanitize(crime),self.__sanitize(rawaddress),self.__sanitize(fulladdress),self.__sanitize(lat),self.__sanitize(lng),self.__sanitize(zipcode),self.__sanitize(city),self.__sanitize(crimedate),self.__sanitize(crimetime)))
+            cur.execute("INSERT INTO crimes(crime,rawaddress,fulladdress,lat,lng,zipcode,city,department,crimedate,crimetime) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(self.__sanitize(crime),self.__sanitize(rawaddress),self.__sanitize(fulladdress),self.__sanitize(lat),self.__sanitize(lng),self.__sanitize(zipcode),self.__sanitize(city),self.__sanitize(department),self.__sanitize(crimedate),self.__sanitize(crimetime)))
             cur.close()
             newid = cur.lastrowid
         return newid
@@ -69,10 +69,20 @@ class crimes:
             cur.execute("DELETE FROM crimes WHERE crimeid = %s",(crimeid))
             cur.close()
 
-    def update(self,crimeid,crime,rawaddress,fulladdress,lat,lng,zipcode,city,crimedate,crimetime):
+    def update(self,crimeid,crime,rawaddress,fulladdress,lat,lng,zipcode,city,department,crimedate,crimetime):
         with self.__con:
             cur = self.__con.cursor()
-            cur.execute("UPDATE crimes SET crime = %s,rawaddress = %s,fulladdress = %s,lat = %s,lng = %s,zipcode = %s,city = %s,crimedate = %s,crimetime = %s WHERE crimeid = %s",(self.__sanitize(crime),self.__sanitize(rawaddress),self.__sanitize(fulladdress),self.__sanitize(lat),self.__sanitize(lng),self.__sanitize(zipcode),self.__sanitize(city),self.__sanitize(crimedate),self.__sanitize(crimetime),self.__sanitize(crimeid)))
+            cur.execute("UPDATE crimes SET crime = %s,rawaddress = %s,fulladdress = %s,lat = %s,lng = %s,zipcode = %s,city = %s,department = %s,crimedate = %s,crimetime = %s WHERE crimeid = %s",(self.__sanitize(crime),self.__sanitize(rawaddress),self.__sanitize(fulladdress),self.__sanitize(lat),self.__sanitize(lng),self.__sanitize(zipcode),self.__sanitize(city),self.__sanitize(department),self.__sanitize(crimedate),self.__sanitize(crimetime),self.__sanitize(crimeid)))
             cur.close()
 
 ##### Application Specific Functions #####
+
+    def checkexists(self,crime,rawaddress,city,department,crimedate,crimetime):
+        with self.__con:
+            cur = self.__con.cursor()
+            cur.execute("SELECT count(*) as count FROM crimes WHERE crime = %s and rawaddress = %s and city = %s and department = %s and crimedate = %s and crimetime = %s",(crime,rawaddress,city,department,crimedate,crimetime))
+            row = cur.fetchone()
+            cur.close()
+        count, = row
+        return bool(count)
+

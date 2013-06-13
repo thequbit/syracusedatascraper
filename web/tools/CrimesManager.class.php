@@ -119,6 +119,40 @@
 
 		///// Application Specific Functions
 
+		function getallbymonth($year,$month)
+		{
+			try
+			{
+				$startdate = $year . "-" . $month . "-1";
+				if( $month == 12 )
+					$stopdate = $year + 1 . "-1-1";
+				else
+					$stopdate = $year . "-" . $month + 1 . "-1";
+			
+				$db = new DatabaseTool(); 
+				$query = 'SELECT crime,fulladdress,lat,lng,zipcode,city,department,crimedate,crimetime FROM crimes WHERE crimedate >= ? AND crimedate <= ?';
+				$mysqli = $db->Connect();
+				$stmt = $mysqli->prepare($query);
+				$stmt->bind_param("ss", $startdate,$stopdate);
+				$results = $db->Execute($stmt);
+			
+				$retArray = array();
+				foreach( $results as $row )
+				{
+					$object = (object) array('crime' => $row['crime'],'fulladdress' => $row['fulladdress'],'lat' => $row['lat'],'lng' => $row['lng'],'zipcode' => $row['zipcode'],'city' => $row['city'],'department' => $row['department'],'crimedate' => $row['crimedate'],'crimetime' => $row['crimetime']);
+					$retArray[] = $object;
+				}
+	
+				$db->Close($mysqli, $stmt);
+			}
+			catch (Exception $e)
+			{
+				error_log( "Caught exception: " . $e->getMessage() );
+			}
+		
+			return $retArray;
+		}
+
 	}
 
 ?>

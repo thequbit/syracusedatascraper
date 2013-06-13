@@ -16,6 +16,7 @@ lat float,
 lng float,
 zipcode varchar(8),
 city varchar(127) not null,
+department varchar(255) not null,
 crimedate date not null,
 crimetime time not null
 );
@@ -23,3 +24,11 @@ crimetime time not null
 create index crimess_crime on crimes(crime);
 create index crimess_crimedate on crimes(crimedate);
 
+create table addresses(
+addressid int not null auto_increment primary key,
+rawaddress text not null,
+fulladdress text not null,
+lat float not null,
+lng float not null,
+zipcode varchar(5) not null
+);

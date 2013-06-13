@@ -10,6 +10,7 @@ import urllib2
 from bs4 import BeautifulSoup
 
 from crimes import crimes
+from addresses import addresses
 
 # GROSS!
 #aseurl = "http://b2.caspio.com/"
@@ -77,7 +78,8 @@ def geocode(address):
 
 def addcrime(crime,rawaddress,city,department,crimedate,crimetime):
     c = crimes()
-   
+    a = addresses()
+ 
     _crimetime = crimetime.split('-')[0].split(' ')[0]
     _ampm = crimetime.split('-')[0].split(' ')[1]
     if _ampm == "p.m.":
@@ -94,7 +96,9 @@ def addcrime(crime,rawaddress,city,department,crimedate,crimetime):
     if True:
     #if c.checkexists(crime,rawaddress,city,department,_crimedate,_crimetime) == False:
 
-        if(crimedate.split('/')[2] == "2013"):
+        valid,fulladdress,lat,lng,zipcode = a.getbyrawaddress(rawaddress)
+        if valid == False:
+        #if(crimedate.split('/')[2] == "2013"):
             _json = geocode("{0},{1}, NY".format(rawaddress,city))
             if _json['status'] != 'OK':
                 raise Exception("Google API says 'NO MORE!'")
@@ -121,7 +125,7 @@ def main(argv):
 
     count = 0
     ignorecount = 0
-    cdate = date(2011,1,1)
+    cdate = date(2013,2,1)
     while cdate < date.today() + timedelta(days=1):
         rows = getrows(cdate)
         #print rows[0].get_text()

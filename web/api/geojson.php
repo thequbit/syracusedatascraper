@@ -14,8 +14,8 @@
 		foreach($results as $result)
 		{
 		    $latlng = array();
-			$latlng[] = $result->lat;
 			$latlng[] = $result->lng;
+			$latlng[] = $result->lat;
 			
 			$feature = (object)array('type' => 'Feature', 
 			                          'geometry' => (object)array('type' => 'Point', 'coordinates' => $latlng),

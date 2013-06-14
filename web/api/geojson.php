@@ -19,7 +19,7 @@
 			
 			$feature = (object)array('type' => 'Feature', 
 			                          'geometry' => (object)array('type' => 'Point', 'coordinates' => $latlng),
-									  'properties' => (object)array('crime' => $result->crime, 'fulladdress' => $result->fulladdress)
+									  'properties' => (object)array('crime' => $result->crime, 'fulladdress' => $result->fulladdress, 'department' => $result->department, 'crimedate' => $result->crimedate, 'crimetime' => $result->crimetime)
 									  );
 			
 			$features[] = $feature;

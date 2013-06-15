@@ -125,21 +125,18 @@ def main(argv):
 
     count = 0
     ignorecount = 0
-    cdate = date(2013,2,1)
+    cdate = date(2013,1,1)
     while cdate < date.today() + timedelta(days=1):
-        rows = getrows(cdate)
-        #print rows[0].get_text()
-        #raise Exception("Stop.")
-        print "[INFO   ] Parsing daterange {0} - {1}, with {2} rows ...".format(cdate,cdate+timedelta(days=1),len(rows))
-        for row in rows:
-            #try:
+        if cdate == date(2013,2,1):
+            break;
+        else:
+            rows = getrows(cdate)
+            print "[INFO   ] Parsing daterange {0} - {1}, with {2} rows ...".format(cdate,cdate+timedelta(days=1),len(rows))
+            for row in rows:
                 valid,crime,rawaddress,city,department,crimedate,crimetime = pullcells(row)
                 if valid == True:
                     addcrime(crime,rawaddress,city,department,crimedate,crimetime)
                     count += 1
-            #except:
-                #print '[WARNING] Bad row found, ignoring.'
-                #ignorecount += 1
         cdate = cdate + timedelta(days=1)
 
     print '[INFO   ] Processed {0} crimes successfully. ({1} ignored rows)'.format(count,ignorecount)

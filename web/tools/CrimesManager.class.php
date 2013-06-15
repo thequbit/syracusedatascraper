@@ -153,6 +153,60 @@
 			return $retArray;
 		}
 
+		function getallbydate($date)
+		{
+			try
+			{
+			
+				$db = new DatabaseTool(); 
+				$query = 'SELECT crime,fulladdress,lat,lng,zipcode,city,department,crimedate,crimetime FROM crimes WHERE crimedate = ?';
+				$mysqli = $db->Connect();
+				$stmt = $mysqli->prepare($query);
+				$stmt->bind_param("s", $date);
+				$results = $db->Execute($stmt);
+			
+				$retArray = array();
+				foreach( $results as $row )
+				{
+					$object = (object) array('crime' => $row['crime'],'fulladdress' => $row['fulladdress'],'lat' => $row['lat'],'lng' => $row['lng'],'zipcode' => $row['zipcode'],'city' => $row['city'],'department' => $row['department'],'crimedate' => $row['crimedate'],'crimetime' => $row['crimetime']);
+					$retArray[] = $object;
+				}
+	
+				$db->Close($mysqli, $stmt);
+			}
+			catch (Exception $e)
+			{
+				error_log( "Caught exception: " . $e->getMessage() );
+			}
+		
+			return $retArray;
+		}
+
+		function getstats()
+		{
+			try
+			{
+				
+				$db = new DatabaseTool(); 
+				$query = 'select count(*) as totalcrimes, count(distinct rawaddress) as totaladdresses, count(distinct crimedate) as totaldays, count(distinct crime) as totalcrimetypes from crimes';
+				$mysqli = $db->Connect();
+				$stmt = $mysqli->prepare($query);
+				$results = $db->Execute($stmt);
+			
+				$row = $results[0];
+				$retArray = $object = (object) array('totalcrimes' => $row['totalcrimes'],'totaladdresses' => $row['totaladdresses'],'totaldays' => $row['totaldays'],'totalcrimetypes' => $row['totalcrimetypes']);
+				
+				$db->Close($mysqli, $stmt);
+			}
+			catch (Exception $e)
+			{
+				error_log( "Caught exception: " . $e->getMessage() );
+			}
+		
+			return $retArray;
+		}
+		
+
 	}
 
 ?>

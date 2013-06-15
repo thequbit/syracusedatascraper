@@ -29,7 +29,7 @@
 			
 		function loadData()
 		{
-			var url = "./api/geojson.php?year=2013&month=2";
+			var url = "./api/geojson.php?year=2013&month=1";
 			$.getJSON(url, function (response) {handleData(response)});
 		}
 
@@ -38,8 +38,8 @@
 			var n;
 			for(n=0; n<response.features.length; n++)
 			{
-				lat = response.features[n].geometry.coordinates[0];
-				lng = response.features[n].geometry.coordinates[1];
+				lng = response.features[n].geometry.coordinates[0];
+				lat = response.features[n].geometry.coordinates[1];
 				crime = response.features[n].properties.crime;
 				crimedate = response.features[n].properties.crimedate;
 				crimetime = response.features[n].properties.crimetime;
